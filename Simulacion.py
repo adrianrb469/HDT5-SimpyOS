@@ -3,9 +3,9 @@ import random
 
 
 
-def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, current_time):
+def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, arrival):
 
-    yield env.timeout(current_time) # Simula el tiempo en que se llega un proceso nuevo a la cola
+    yield env.timeout(arrival) # Simula el tiempo en que se llega un proceso nuevo a la cola
     current_time = env.now  
 
     print('t=%i %s en New. RAM requerida: %i RAM disponible: %i' % (env.now, name, ramAsigned, RAM.level))
@@ -14,10 +14,12 @@ def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, current_
     while (instructions > 0):
         # Entra en ready
         print('t=%i %s en Ready. Instrucciones restantes: %i ' % (env.now, name, instructions))
-        instructions -= clock_speed 
-        yield env.timeout(1) # Un ciclo de reloj
-        # Estado despues de 1 ciclo
-        print('t=%i %s en Running. Instrucciones restantes: %i ' % (env.now, name, instructions))
+        with CPU.request() as req:  #pide el procesador
+            yield req
+            instructions -= clock_speed 
+            yield env.timeout(1) # Un ciclo de reloj
+            # Estado despues de 1 ciclo
+            print('t=%i %s en Running. Instrucciones restantes: %i ' % (env.now, name, instructions))
     
     yield  RAM.put(ramAsigned)
     print('t=%i %s Terminated. RAM devuelta: %i RAM disponible: %i' % (env.now, name, ramAsigned, RAM.level))
@@ -28,22 +30,21 @@ def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, current_
 
 random.seed(10)
 env = simpy.Environment()
-RAM = simpy.Container(env, init=30, capacity=30) # Memoria RAM inicial
+RAM = simpy.Container(env, init=100, capacity=100) # Memoria RAM inicial
 CPU = simpy.Resource(env, 1) # Cantidad de CPUs disponibles
 total_time = 0
 
 
-num_processes = 50 # Numero total de procesos a ser corridos en el OS
+num_processes = 25 # Numero total de procesos a ser corridos en el OS
 interval = 10 # Intervalo para generar tiempos al azar de llegada de procesos
 clock_speed = 3 # Velocidad de un ciclo de reloj
 
 for i in range(num_processes):
-        current_time = 0
+        arrival = 0
         instructions = random.randint(1,10) # Instrucciones a completar por el CPU 
         ramAsigned = random.randint(1,10) # Memoria RAM que necesita el proceso
-        env.process(program(env, '[Proceso%i]' % i, CPU, RAM, instructions, ramAsigned, clock_speed, current_time)) 
+        env.process(program(env, '[Proceso%i]' % i, CPU, RAM, instructions, ramAsigned, clock_speed, arrival)) 
        
 env.run()
-print('Tiempo promedio por proceso %d ' % (total_time / num_processes))
-
+print('Tiempo promedio %d ' % (total_time / num_processes))
 
