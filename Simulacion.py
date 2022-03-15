@@ -3,9 +3,9 @@ import random
 
 
 
-def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, arrival, interval):
+def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, arrival):
 
-    yield env.timeout(random.expovariate(1.0 / interval))  # Simula el tiempo en que se llega un proceso nuevo a la cola
+    yield env.timeout(random.expovariate(1.0 / 10))
     current_time = env.now  
 
     print('t=%i %s en New. RAM requerida: %i RAM disponible: %i' % (env.now, name, ramAsigned, RAM.level))
@@ -25,8 +25,8 @@ def program(env, name, CPU, RAM, instructions, ramAsigned, clock_speed, arrival,
     print('t=%i %s Terminated. RAM devuelta: %i RAM disponible: %i' % (env.now, name, ramAsigned, RAM.level))
     # Calcula el tiempo total de la simulacion
     global total_time
-    total_time += env.now - current_time
-    print('Tiempo total %d' % (env.now - current_time))
+    total_time = env.now 
+    
 
 random.seed(10)
 env = simpy.Environment()
@@ -35,18 +35,18 @@ CPU = simpy.Resource(env, 1) # Cantidad de CPUs disponibles
 total_time = 0
 
 
-num_processes = 200 # Numero total de procesos a ser corridos en el OS
+num_processes = 25 # Numero total de procesos a ser corridos en el OS
  # Intervalo para generar tiempos al azar de llegada de procesos
 clock_speed = 3 # Velocidad de un ciclo de reloj
 
 for i in range(num_processes):
-        arrival = 0
+        arrival = 0 
         instructions = random.randint(1,10) # Instrucciones a completar por el CPU 
         ramAsigned = random.randint(1,10) # Memoria RAM que necesita el proceso
-        env.process(program(env, '[Proceso%i]' % i, CPU, RAM, instructions, ramAsigned, clock_speed, arrival, 5)) 
+        env.process(program(env, '[Proceso%i]' % i, CPU, RAM, instructions, ramAsigned, clock_speed, arrival)) 
+            
     
-        
-       
+
 env.run()
-print('Tiempo promedio %d ' % (total_time / num_processes))
+print('Tiempo promedio %f ' % (total_time / num_processes))
 
